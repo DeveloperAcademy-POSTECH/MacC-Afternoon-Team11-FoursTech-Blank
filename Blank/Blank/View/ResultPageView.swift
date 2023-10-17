@@ -10,10 +10,11 @@ import SwiftUI
 struct ResultPageView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var isLinkActive: Bool
+    @State var seeCorrect: Bool = true
     
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
+            ZStack(alignment: .top) {
                 resultImage
                 bottomCorrectInfo
             }
@@ -22,7 +23,10 @@ struct ResultPageView: View {
                     homeBtn
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    backToOverViewBtn
+                    HStack {
+                        seeCorrectBtn
+                        backToOverViewBtn
+                    }
                 }
             }
             .toolbarBackground(.visible, for: .navigationBar)
@@ -35,11 +39,16 @@ struct ResultPageView: View {
     
     private var bottomCorrectInfo: some View {
         HStack {
-            // TODO: 정답률, 문제개수, 정답개수 받아오기
-            Spacer().frame(width: 50)
-            CorrectInfoView()
-                .frame(minWidth: 600, maxWidth: 800, minHeight: 50, maxHeight: 70)
-            Spacer().frame(width: 50)
+            if seeCorrect == true {
+                // TODO: 정답률, 문제개수, 정답개수 받아오기
+                Spacer().frame(width: 50)
+                CorrectInfoView()
+                    .frame(minWidth: 600, maxWidth: 800, minHeight: 50, maxHeight: 70)
+                Spacer().frame(width: 50)
+            }
+            else {
+                
+            }
         }
     }
     
@@ -55,6 +64,18 @@ struct ResultPageView: View {
     private var homeBtn: some View {
         NavigationLink(destination: HomeView()) {
             Image(systemName: "house")
+        }
+    }
+    
+    private var seeCorrectBtn: some View {
+        Button {
+            seeCorrect.toggle()
+        } label: {
+            if seeCorrect == true {
+                Text("정답률안보기")
+            } else {
+                Text("정답률보기")
+            }
         }
     }
     
