@@ -19,14 +19,18 @@ struct WordSelectView: View {
     @State var noneOfWordSelected = true
     var sessionNum: Int
     
+    @State private var scale: CGFloat = 1.0
+    
     @ObservedObject var wordSelectViewModel: WordSelectViewModel
     
-    
+    @State var movedCount: Int = 0
     
     var body: some View {
         NavigationStack {
             VStack {
-                wordSelectImage
+                ZoomableContainer(zoomScale: $scale, movedCount: $movedCount) {
+                    wordSelectImage
+                }
                 Spacer().frame(height : UIScreen.main.bounds.height * 0.12)
                 PencilDobuleTapInteractionView {
                     // 이 클로저는 pencil 더블 탭 시 실행
@@ -40,9 +44,7 @@ struct WordSelectView: View {
                     backButton
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    
                     HStack{
-                        
                         // segment 버튼
                         Picker("도구 선택", selection: $isSelectArea) {
                             Image(systemName: "arrow.rectanglepath")
@@ -110,7 +112,16 @@ struct WordSelectView: View {
     private var wordSelectImage: some View {
         // TODO: 단어 선택시 해당 단어 위에 마스킹 생성 기능, 다시 터치시 해제, 비전 스타트가 여기에 필요한지..?
         VStack {
-            ImageView(uiImage: wordSelectViewModel.currentImage, visionStart: $visionStart, viewName: "WordSelectView", isSelectArea: $isSelectArea, basicWords: $wordSelectViewModel.basicWords, targetWords: .constant([]), currentWritingWords: .constant([]))
+            ImageView(
+                uiImage: wordSelectViewModel.currentImage,
+                visionStart: $visionStart,
+                viewName: "WordSelectView",
+                isSelectArea: $isSelectArea,
+                basicWords: $wordSelectViewModel.basicWords,
+                targetWords: .constant([]),
+                currentWritingWords: .constant([]),
+                movedCount: $movedCount
+            )
         }
         .onChange(of: wordSelectViewModel.basicWords) { _ in
             noneOfWordSelected = !wordSelectViewModel.basicWords.contains(where: { $0.isSelectedWord })
@@ -142,9 +153,7 @@ struct WordSelectView: View {
         .buttonStyle(.borderedProminent)
         .disabled(noneOfWordSelected)
     }
-    
 }
-
 
 #Preview {
     HomeView()
