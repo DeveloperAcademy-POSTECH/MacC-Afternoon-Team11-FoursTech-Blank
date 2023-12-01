@@ -9,38 +9,27 @@ import SwiftUI
 
 struct WordSelectView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var showingAlert = true
+    @State private var showExhibitionModal = false
     @State var visionStart: Bool = false
     
     @State var goToOCRView = false
-    @State var noneOfWordSelected = true
     
-    // 더블탭, selectionView를 위한 상태변수
-    @State private var selectedOption: String = "dragPen"
     @State var isSelectArea = true
-    @State var isBlankArea = false
-    
+    @State var noneOfWordSelected = true
     var sessionNum: Int
     
     @ObservedObject var wordSelectViewModel: WordSelectViewModel
     
-    
-    
     var body: some View {
         NavigationStack {
             VStack {
-                ZStack{
-                    wordSelectImage
-                    SelectionView(selectedOption: $selectedOption, isSelectArea: $isSelectArea, isBlankArea: $isBlankArea).position(
-                        x: UIScreen.main.bounds.size.width * 0.9,
-                        y: UIScreen.main.bounds.size.height * 0.03)
-                    
-                }
+                wordSelectImage
                 
+//                Spacer().frame(height : UIScreen.main.bounds.height * 0.12)
                 
                 PencilDobuleTapInteractionView {
                     // 이 클로저는 pencil 더블 탭 시 실행
-                    self.pencilDoubleTapButtonAction(isSelectAreaBool: isSelectArea, isBlankAreaBool: isBlankArea)
+                    self.isSelectArea.toggle()
                     
                 }
                 .frame(width: 0, height: 0)
@@ -50,7 +39,30 @@ struct WordSelectView: View {
                     backButton
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    goToNextPageButton
+                    
+                    HStack{
+                        
+                        // segment 버튼
+                        Picker("도구 선택", selection: $isSelectArea) {
+                            Image(systemName: "arrow.rectanglepath")
+                                .symbolRenderingMode(.monochrome)
+                                .foregroundStyle(.black)
+                                .tag(true)
+                            
+                            Image(systemName: "eraser.line.dashed.fill")
+                                .symbolRenderingMode(.monochrome)
+                                .foregroundStyle(.black)
+                                .tag(false)
+                        }
+                        .id(isSelectArea)
+                        .tint(.red)
+                        .pickerStyle(.segmented)
+                        
+                        
+                        goToNextPageButton
+                        
+                    }
+                    
                 }
             }
             .toolbarBackground(Color.customToolbarBackgroundColor, for: .navigationBar)
@@ -63,12 +75,25 @@ struct WordSelectView: View {
         .navigationDestination(isPresented: $goToOCRView) {
             OCREditView(sessionNum: sessionNum, wordSelectViewModel: wordSelectViewModel)
         }
+        // 쇼케이스 튜토리얼
+        .fullScreenCover(isPresented: $showExhibitionModal) {
+            ExhibitionTutorialManager.default.setEncountered(.wordSelectView)
+        } content: {
+            ExhibitionTutorialView(tutorialCategory: .wordSelectView)
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(exhibitionHideTime)) {
+                withoutAnimation {
+                    showExhibitionModal =  !ExhibitionTutorialManager.default.isEncountered(.wordSelectView)
+                }
+            }
+        }
     }
     
     private var wordSelectImage: some View {
         // TODO: 단어 선택시 해당 단어 위에 마스킹 생성 기능, 다시 터치시 해제, 비전 스타트가 여기에 필요한지..?
         VStack {
-            ImageView(uiImage: wordSelectViewModel.currentImage, visionStart: $visionStart, viewName: "WordSelectView", isSelectArea: $isSelectArea, isBlankArea: $isBlankArea, basicWords: $wordSelectViewModel.basicWords, targetWords: .constant([]), currentWritingWords: .constant([]), selectedOption: $selectedOption )
+            ImageView(uiImage: wordSelectViewModel.currentImage, visionStart: $visionStart, viewName: "WordSelectView", isSelectArea: $isSelectArea, basicWords: $wordSelectViewModel.basicWords, targetWords: .constant([]), currentWritingWords: .constant([]))
         }
         .onChange(of: wordSelectViewModel.basicWords) { _ in
             noneOfWordSelected = !wordSelectViewModel.basicWords.contains(where: { $0.isSelectedWord })
@@ -83,7 +108,6 @@ struct WordSelectView: View {
         }
         .buttonStyle(.bordered)
     }
-    
     
     private var goToNextPageButton: some View {
         Button {
@@ -102,30 +126,9 @@ struct WordSelectView: View {
         .disabled(noneOfWordSelected)
     }
     
-    func pencilDoubleTapButtonAction(isSelectAreaBool: Bool, isBlankAreaBool: Bool) {
-        withAnimation{
-            switch (isSelectAreaBool, isBlankAreaBool) {
-            case (false, true):
-                selectedOption = "dragPen" // 프레임 -> 드래그 버튼이 솟아오르게 변경
-                isSelectArea = true
-                isBlankArea = false
-            case (true, false):
-                selectedOption = "eraser" // 드래그 -> 지우개 버튼이 솟아오르게 변경
-                isSelectArea = false
-                isBlankArea = false
-            case (false, false):
-                selectedOption = "framPen" // 지우개 -> 프레임 버튼이 솟아오르게 변경
-                isSelectArea = false
-                isBlankArea = true
-            default:
-                isSelectArea = false
-                isBlankArea = true
-            }
-        }
-    }
 }
 
-
-#Preview {
-    HomeView()
-}
+//
+//#Preview {
+//    HomeView()
+//}
